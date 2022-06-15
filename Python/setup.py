@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="dotserializer",
-    version="0.0.1",
+    version="0.0.2",
     author="Rath Robotics",
     author_email="tk@uncertainty.email",
     description="Transmit and receive Serial data and divide the stream into packets with NLSM protocol.",
