@@ -136,3 +136,11 @@ while True:
     ser.transmit(buffer)
 
 ```
+
+Packet receiving timeout, blocking vs non-blocking
+
+```python
+buffer = ser.receive(timeout=None)  # blocking (default)
+buffer = ser.receive(timeout=0)     # non-blocking, return b"" if no data
+buffer = ser.receive(timeout=1)     # timeout for 1 sec, return b"" if no data
+```
