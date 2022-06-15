@@ -1,12 +1,13 @@
 /**
  * @file dotSerializer.h
  * @author Rath Robotics
- * @brief Transmit and receive Serial data and divide the stream into packets with NLSM protocol.
+ * @brief Transmit and receive Serial data and divide the stream into packets
+ * with NLSM protocol.
  * @version 1.0
  * @date 2022-06-14
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #pragma once
@@ -26,7 +27,7 @@ namespace rath {
 class SerializerClass {
  public:
   /**
-   * Initialize the serial object.
+   * Initialize the Serial object.
    *
    * @param baudrate: the baudrate of the serial port.
    */
@@ -35,6 +36,8 @@ class SerializerClass {
   }
 
   /**
+   * @brief Receive a packet from Serial.
+   *
    * @param buffer: the pointer to the data buffer to store incoming
    * data.
    * @param size: the maximum number of bytes to receive.
@@ -74,6 +77,8 @@ class SerializerClass {
   }
 
   /**
+   * @brief Transmit a packet to Serial.
+   *
    * @param buffer: the pointer to the data that will be sent.
    * @param size: the number of bytes to send.
    */
