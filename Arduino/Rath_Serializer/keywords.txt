@@ -1,0 +1,6 @@
+rath		DATA_TYPE
+Serializer	DATA_TYPE
+
+init		RESERVED_WORD
+receive		RESERVED_WORD
+transmit		RESERVED_WORD
