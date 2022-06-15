@@ -10,10 +10,9 @@ class Serializer:
     ESC_END = b"\x1A"
     ESC_ESC = b"\x1B"
 
-    def __init__(self, port=None, baudrate=115200, timeout=None):
+    def __init__(self, port=None, baudrate=115200):
         self._port = port
         self.baudrate = baudrate
-        self.timeout = timeout
 
         if not self._port:
             # if no port is supplied, we enumerate the available ports
@@ -25,7 +24,7 @@ class Serializer:
                     "No \"port\" argument supplied, using {0}.".format(self._port))
 
         self._ser = serial.Serial(
-            port=self._port, baudrate=baudrate, timeout=timeout)
+            port=self._port, baudrate=baudrate, timeout=None)
 
     @staticmethod
     def getAvailablePorts():
@@ -37,7 +36,8 @@ class Serializer:
 
     @return:
     """
-    def receive(self):
+    def receive(self, timeout=None):
+        self._ser.timeout = timeout
         c = b""
         buffer = b""
         while c != Serializer.END:
