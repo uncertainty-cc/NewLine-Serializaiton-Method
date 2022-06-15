@@ -21,12 +21,23 @@ There are 4 (four) different characters defined in the ISLP specification.
 
 When transmitting data, the sender will pre-process the data according to the following steps:
 
-1. If ESC character is present, send ESC followed by ESC_ESC instead.
+1. If ESC character is present, send ESC followed by ESC_ESC instead. 
+
+```
+[... | x | ESC | x | ...] => [... | x | ESC | ESC_ESC | x | ...]
+```
 
 2. If END character is present, send ESC followed by ESC_END instead.
 
+```
+[... | x | END | x | ...] => [... | x | ESC | ESC_END | x | ...]
+```
+
 3. Append an END character at the end of frame.
 
+```
+[... | x ] => [... | x | END ]
+```
 
 
 ## Receiver
@@ -35,11 +46,21 @@ When receiving data, the receiver will process the data according to the followi
 
 1. If an ESC character followed by an ESC_ESC character is received, it will be parsed as receiving one ESC character.
 
+```
+[... | x | ESC | ESC_ESC | x | ...] => [... | x | ESC | x | ...]
+```
+
 2. If an ESC character followed by an ESC_END character is received, it will be parsed as receiving one END character.
+
+```
+[... | x | ESC | ESC_END | x | ...] => [... | x | END | x | ...]
+```
 
 3. If an END character is received, then the frame is finished. The receiver can proceed to process the data received or continue to receive the following frames.
 
-
+```
+[... | x | END ] => [... | x ]
+```
 
 ## Pros / Cons
 
@@ -49,171 +70,69 @@ When receiving data, the receiver will process the data according to the followi
 
 - The END character is the newline character in ASCII character set, and frames will be separated into different lines in a serial monitor. This is easier to debug and more readable compared to SLIP and COBS.
 
+## Arduino
 
+### Installation
 
-## Python Example
+Download the `.zip` file and extract it into `<Arduino_installation_path>/Sketchbook/libraries/`
+
+### Usage
+
+A simple echo program
+
+```cpp
+#include "dotserializer.h"
+
+using namespace rath;
+
+uint8_t buffer[128];
+
+void setup() {
+  Serializer.init(115200);
+}
+
+void loop() {
+  uint16_t rx_size = Serializer.receive(buffer, 128);
+
+  Serializer.transmit(buffer, rx_size);
+}
+
+```
+
+## Python
+
+### Installation
+
+```bash
+pip install dotserializer
+```
+
+### Usage
+
+List all available ports
 
 ```python
-import struct
-import logging
+from dotserializer import Serializer
+
+ports = Serializer.getAvailablePorts()
+print(ports)
+```
+
+A simple echo program
+
+```python
 import time
 
-import serial
+from dotserializer import Serializer
 
-logger = logging.getLogger("NLSMSerial")
-logger.setLevel(logging.INFO)
+ser = Serializer(port="COM1", baudrate=115200)
 
-log_handler = logging.StreamHandler()
-log_handler.setLevel(logging.INFO)
-log_handler.setFormatter(logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
-logger.addHandler(log_handler)
+# wait for serial device to initialize
+time.sleep(2)
 
-
-class NLSMSerial:
-    END = b"\x0A"
-    ESC = b"\x0B"
-    ESC_END = b"\x1A"
-    ESC_ESC = b"\x1B"
-    
-    def __init__(self, port, baudrate=115200, timeout=0, persistent=True):
-        self.port = port
-        self.baudrate = baudrate
-        self.timeout = timeout
-        self.persistent = persistent
-
-        self.connect()
-
-    def connect(self):
-        self._ser = None
-        while not self._ser:
-            try:
-                self._ser = serial.Serial(self.port, baudrate=self.baudrate, timeout=self.timeout)
-            except serial.serialutil.SerialException as e:
-                if not self.persistent:
-                    raise e
-                logger.info("Connecting to \"{0}\"...".format(self.port))
-                time.sleep(1)
-        
-        logger.info("\"{0}\" Connected.".format(self.port))
-
-    def _read(self):  
-        try:
-            c = self._ser.read(1)
-        except serial.serialutil.SerialException:
-            if not self.persistent:
-                raise e
-            logger.warning("Connection lost. Reconencting...")
-            self.connect()
-        return c
-    
-    def _write(self, c):
-        try:
-            self._ser.write(c)
-        except serial.serialutil.SerialException:
-            if not self.persistent:
-                raise e
-            logger.warning("Connection lost. Reconencting...")
-            self.connect()
-        return True
-
-    def receive(self):
-        c = b""
-        buffer = b""
-
-        while c != self.END:
-            if c == self.ESC:
-                c = self._read()
-                if c == self.ESC_END:
-                    buffer += self.END
-                elif c == self.ESC_ESC:
-                    buffer += self.ESC
-                else:
-                    buffer += c
-            else:
-                buffer += c
-            
-            c = self._read()
-            if c == b"":
-                return b""  # timeout
-        
-        return buffer
-    
-    def transmit(self, buffer):
-        index = 0
-
-        while index < len(buffer):
-            c = struct.pack("B", buffer[index])
-            if c == self.END:
-                self._write(self.ESC)
-                self._write(self.ESC_END)
-            elif c == self.ESC:
-                self._write(self.ESC)
-                self._write(self.ESC_ESC)
-            else:
-                self._write(c)
-            index += 1
-            
-        self._write(self.END)
-        
-        return index
-
-    def flushRX(self):
-        is_empty = True
-        
-        while self._ser.read():
-            is_empty = False
-            
-        return is_empty
-
-# ============================================================== #
-
-
-import time
-import random
-import logging
-
-
-
-ser = NLSMSerial("COM20", 115200, timeout=0.1)
-
-
-
-datasize = 0
-i = 0
-
-performance_prev_t = time.time()
 while True:
-    t = time.time()
-    buf = "%s\n" % t
-    
-    ser.transmit(buf.encode())
-
-    time.sleep(0.01)
-
-    buf = ser.receive()
-
-    #ser.flushRX()
-    
-    datasize += len(buf)
-
-    i += 1
-    
-    try:
-        prev_t = float(buf.decode().replace("\n", ""))
-        print(t, "\t", time.time() - prev_t)
-    except KeyboardInterrupt as e:
-        raise e
-    except:
-        print(buf)
-        pass
-
-
-    if i > 100:
-        print(datasize / (time.time() - performance_prev_t), " wd/s")
-        i = 0
-        datasize = 0
-        performance_prev_t = time.time()
-
-
+    buffer = ser.receive()
+    print("recv", buffer)
+    ser.transmit(buffer)
 
 ```
