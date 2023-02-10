@@ -4,7 +4,7 @@ import serial
 import serial.tools.list_ports
 
 
-class Serializer:
+class UARTSerializer:
     END = b"\x0A"
     ESC = b"\x0B"
     ESC_END = b"\x1A"
@@ -34,7 +34,9 @@ class Serializer:
     """
     Receive a packet from serial.
 
-    @return:
+    @type timeout: float
+    @param timeout: 
+    @return: the buffer received, or b"" if no data is available
     """
     def receive(self, timeout=None):
         self._ser.timeout = timeout
