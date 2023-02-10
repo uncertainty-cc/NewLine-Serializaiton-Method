@@ -1,7 +1,7 @@
-# dotSerializer-Python
+# Serializer-Python
 
 ## Installation
 
 ```bash
-py -m pip install .
+py -m pip install cc-serializer
 ```
